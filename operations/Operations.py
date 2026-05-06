@@ -1,5 +1,4 @@
 from sqlmodel import Session, select
-
 from models import Motorbase, Motorid
 
 def createmoto(moto: Motorbase, session: Session):
