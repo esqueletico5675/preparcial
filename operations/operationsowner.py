@@ -30,9 +30,20 @@ def Uptadeowner (id: int,new_owner:uptadeownerchm,session: Session):
 def killOwner (id: int,session: Session):
     try:
         owner = session.get_one(Ownerid,id)
-        session.delete(owner)
+        owner.active = False
+        session.add(owner)
         session.commit()
         return owner
     except NoResultFound:
         return None
 
+
+def showallowners (session: Session):
+    owners = session.exec(select(Ownerid)).all()
+    return owners
+
+def inactive_owners (session: Session):
+    return session.exec(select(Ownerid).where(Ownerid.active ==False)).all()
+
+def active_owners (session: Session):
+    return session.exec(select(Ownerid).where(Ownerid.active == True)).all()

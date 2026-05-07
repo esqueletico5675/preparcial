@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from psycopg2.extras import register_uuid
 
 from operations.Operations import createmoto, showallmotos, Motoruptader, killmotor, findonemoto, uptademoto
-from operations.operationsowner import createowner,findowner,killOwner,uptadeownerchm,Uptadeowner
+from operations.operationsowner import createowner, findowner, killOwner, uptadeownerchm, Uptadeowner, showallowners, \
+    inactive_owners,active_owners
 from models.models import Motorid, Motorbase
 from models.owner import Ownerid, Owner
 from db import  SessionDep, create_all_tables
@@ -62,3 +63,15 @@ async def kill_owner(id: int,session: SessionDep):
     if not (delete):
         raise HTTPException(status_code=404, detail="Owner not found")
     return delete
+
+@app.get("/showowners",response_model=list[Ownerid])
+async def ownershow(session: SessionDep):
+    return showallowners(session)
+
+@app.get("/inactive_owners",response_model=list[Ownerid])
+async def ownersinactive(session: SessionDep):
+    return inactive_owners(session)
+
+@app.get("/active_owners",response_model=list[Ownerid])
+async def owners_active(session: SessionDep):
+    return active_owners(session)

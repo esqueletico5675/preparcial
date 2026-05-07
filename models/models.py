@@ -12,6 +12,8 @@ class Motorbase(SQLModel):
 class Motorid(Motorbase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
+
+
 class Motoruptader(Motorbase):
     ownerid: int | None = Field(default=None)
     name: str | None = Field(default=None, min_length=3, max_length=64)

@@ -7,6 +7,7 @@ class Owner( SQLModel):
 
 class Ownerid( Owner, table = True):
     id : int | None = Field(default= None ,primary_key=True, gt=0)
+    active : bool = Field(default=True)
 
 class uptadeownerchm ( Owner):
     name : str | None = Field(default=None, min_length=3, max_length=64)
