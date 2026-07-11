@@ -1,7 +1,7 @@
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from models.Factura import FacturaId
+from models.Factura import FacturaId, FacturaUpdate
 from models.Servicio import ServicioEstado
 from operations.Operationsservicio import find_servicio, get_servicio_items
 
@@ -58,3 +58,15 @@ def facturas_by_status(status: str, session: Session):
     return session.exec(
         select(FacturaId).where(FacturaId.status == status)
     ).all()
+
+
+def update_factura(id: int, data: FacturaUpdate, session: Session):
+    factura = find_factura(id, session)
+    if factura is None:
+        return None
+    updates = data.model_dump(exclude_unset=True)
+    factura.sqlmodel_update(updates)
+    session.add(factura)
+    session.commit()
+    session.refresh(factura)
+    return factura

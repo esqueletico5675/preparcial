@@ -220,7 +220,7 @@ function pintarRepuestos(items) {
   tbody.innerHTML = "";
 
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-2">Sin repuestos agregados aún</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-2">Sin repuestos agregados aún</td></tr>`;
     return;
   }
 
@@ -235,9 +235,26 @@ function pintarRepuestos(items) {
       <td>${item.quantity}</td>
       <td>$${Number(item.unit_price).toLocaleString("es-CO")}</td>
       <td>$${subtotal.toLocaleString("es-CO")}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-danger" onclick="eliminarRepuesto(${item.id})" title="Quitar repuesto">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
     `;
     tbody.appendChild(fila);
   });
+}
+
+async function eliminarRepuesto(itemId) {
+  if (!confirm("¿Quitar este repuesto del servicio? Se devolverá al inventario.")) return;
+
+  try {
+    await apiDelete(`/removeServicioItem/${itemId}`);
+    mostrarAlerta("Repuesto quitado del servicio");
+    cargarRepuestos();
+  } catch (error) {
+    mostrarError(error);
+  }
 }
 
 async function agregarRepuesto(evento) {

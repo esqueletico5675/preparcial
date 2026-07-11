@@ -9,7 +9,7 @@ from models.owner import Ownerid, Owner, uptadeownerchm
 from models.Producto import ProductoId, ProductoBase, ProductoUpdate
 from models.Servicio import ServicioId, ServicioBase, ServicioUpdate, \
     ServicioProductoId, ServicioProductoBase
-from models.Factura import FacturaId
+from models.Factura import FacturaId , FacturaUpdate
 
 from operations.Operations import createvehicle, showallvehicle, \
     findonevehicle, uptadevehicle, killvehicle
@@ -19,9 +19,9 @@ from operations.Operationsproducto import create_producto, find_producto, \
     show_all_productos, update_producto, deactivate_producto
 from operations.Operationsservicio import create_servicio, find_servicio, \
     show_all_servicios, update_servicio, add_producto_to_servicio, \
-    get_servicio_items
+    get_servicio_items, remove_servicio_item
 from operations.Operationsfactura import generar_factura, find_factura, \
-    show_all_facturas
+    show_all_facturas, update_factura
 
 app = FastAPI(lifespan=create_all_tables)
 
@@ -220,6 +220,46 @@ async def find_factura_endpoint(id: int, session: SessionDep):
     if not factura:
         raise HTTPException(status_code=404, detail="Factura not found")
     return factura
+
+# ---------------------- FACTURAS ----------------------
+
+@app.post("/GENERARfactura", response_model=FacturaId)
+async def generar_factura_endpoint(servicio_id: int, session: SessionDep):
+    factura = generar_factura(servicio_id, session)
+    if not factura:
+        raise HTTPException(
+            status_code=400,
+            detail="Servicio no encontrado o ya fue facturado",
+        )
+    return factura
+
+
+@app.get("/showfacturas", response_model=list[FacturaId])
+async def show_facturas_endpoint(session: SessionDep):
+    return show_all_facturas(session)
+
+
+@app.get("/FindOneFactura", response_model=FacturaId)
+async def find_factura_endpoint(id: int, session: SessionDep):
+    factura = find_factura(id, session)
+    if not factura:
+        raise HTTPException(status_code=404, detail="Factura not found")
+    return factura
+
+
+@app.patch("/uptadeFactura/{id}", response_model=FacturaId)
+async def update_factura_endpoint(id: int, factura: FacturaUpdate, session: SessionDep):
+    updated = update_factura(id, factura, session)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Factura not found")
+    return updated
+
+@app.delete("/removeServicioItem/{item_id}", response_model=ServicioProductoId)
+async def remove_servicio_item_endpoint(item_id: int, session: SessionDep):
+    removed = remove_servicio_item(item_id, session)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Repuesto no encontrado")
+    return removed
 
 
 # ---------------------- FRONTEND ----------------------

@@ -35,3 +35,38 @@ body {
   z-index: 2000;
   min-width: 300px;
 }
+
+/* ============================================================
+   IMPRESIÓN DE FACTURA
+   Cuando el usuario imprime (o guarda como PDF) desde el modal de
+   factura, ocultamos TODO menos el contenido de #factura-imprimible.
+   ============================================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #factura-imprimible,
+  #factura-imprimible * {
+    visibility: visible;
+  }
+
+  #factura-imprimible {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+  }
+
+  /* Bootstrap pone los modales con display:none al imprimir; forzamos
+     a que se muestre solo el que tiene la factura */
+  .modal {
+    position: absolute !important;
+    display: block !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

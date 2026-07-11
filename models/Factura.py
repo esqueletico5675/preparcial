@@ -26,3 +26,7 @@ class FacturaId(FacturaBase, table=True):
     __tablename__ = "factura"
 
     id: int | None = Field(default=None, primary_key=True)
+
+
+class FacturaUpdate(SQLModel):
+    status: str | None = Field(default=None, max_length=20)

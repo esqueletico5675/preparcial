@@ -73,10 +73,16 @@ def get_servicio_items(servicio_id: int, session: Session):
 
 
 def remove_servicio_item(item_id: int, session: Session):
-    """Quita un repuesto del servicio y le devuelve el stock al inventario."""
+    """Quita un repuesto del servicio y le devuelve el stock al inventario.
+    Devuelve None si el item no existe o si el servicio ya fue facturado
+    (no se puede modificar una factura ya generada)."""
     try:
         item = session.get_one(ServicioProductoId, item_id)
     except NoResultFound:
+        return None
+
+    servicio = find_servicio(item.servicioid, session)
+    if servicio is not None and servicio.status == "facturado":
         return None
 
     producto = session.get_one(ProductoId, item.productoid)
