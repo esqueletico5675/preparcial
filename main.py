@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from db import SessionDep, create_all_tables
 
@@ -219,3 +220,11 @@ async def find_factura_endpoint(id: int, session: SessionDep):
     if not factura:
         raise HTTPException(status_code=404, detail="Factura not found")
     return factura
+
+
+# ---------------------- FRONTEND ----------------------
+# IMPORTANTE: este mount va SIEMPRE al final del archivo, después de todas
+# las rutas @app.get/post/patch/delete de arriba. Sirve la carpeta frontend/
+# en la raíz, así que abriendo http://127.0.0.1:8000 se ve index.html
+# y todo (API + frontend) corre en el mismo puerto (8000).
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
