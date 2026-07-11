@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from db import SessionDep, create_all_tables
 
@@ -22,6 +23,16 @@ from operations.Operationsfactura import generar_factura, find_factura, \
     show_all_facturas
 
 app = FastAPI(lifespan=create_all_tables)
+
+# Permite que el frontend (HTML/JS servido desde otro origen, ej. Live Server
+# o file://) pueda hacer peticiones a esta API sin que el navegador las bloquee.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ---------------------- VEHICULOS ----------------------

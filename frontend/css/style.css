@@ -1,0 +1,37 @@
+/* ============================================================
+   ESTILOS PROPIOS
+   Bootstrap ya hace casi todo el trabajo. Aquí solo agregamos
+   pequeños ajustes para que se vea más limpio.
+   ============================================================ */
+
+body {
+  background-color: #f4f6f9;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.table-responsive {
+  background: white;
+  border-radius: 0.5rem;
+}
+
+/* Cursor tipo botón para filas o iconos clickeables */
+.clickable {
+  cursor: pointer;
+}
+
+/* Contenedor fijo arriba para las alertas (mensajes de éxito/error) */
+#alertas {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 2000;
+  min-width: 300px;
+}
