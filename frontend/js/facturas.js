@@ -8,6 +8,8 @@
 // - Hay un buscador que filtra por placa.
 // ============================================================
 
+const IVA_RATE = 0.19; // 19%, igual que en Servicios y en el backend
+
 let modalFactura;
 let modalVerFactura;
 let facturasCache = [];
@@ -175,22 +177,40 @@ async function verFactura(facturaId) {
 
     const tbodyItems = document.getElementById("f-items");
     tbodyItems.innerHTML = "";
+
+    let totalSubtotalItems = 0;
+    let totalIvaItems = 0;
+
     if (!items || items.length === 0) {
-      tbodyItems.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Sin repuestos asociados</td></tr>`;
+      tbodyItems.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Sin ítems agregados aún</td></tr>`;
     } else {
       items.forEach((item) => {
-        const producto = productosMap.get(item.productoid);
+        const esManoDeObra = item.tipo === "mano_obra";
+        const etiquetaTipo = esManoDeObra ? "Mano de obra" : "Repuesto";
         const subtotalItem = item.quantity * item.unit_price;
+        const ivaItem = item.aplica_iva ? subtotalItem * IVA_RATE : 0;
+        const totalItem = subtotalItem + ivaItem;
+
+        totalSubtotalItems += subtotalItem;
+        totalIvaItems += ivaItem;
+
         const fila = document.createElement("tr");
         fila.innerHTML = `
-          <td>${producto?.name ?? `Producto ${item.productoid}`}</td>
+          <td>${etiquetaTipo}</td>
+          <td>${item.descripcion}</td>
           <td class="text-end">${item.quantity}</td>
           <td class="text-end">$${Number(item.unit_price).toLocaleString("es-CO")}</td>
-          <td class="text-end">$${Number(subtotalItem).toLocaleString("es-CO")}</td>
+          <td class="text-end">$${subtotalItem.toLocaleString("es-CO")}</td>
+          <td class="text-end">${item.aplica_iva ? `$${ivaItem.toLocaleString("es-CO")}` : "$0"}</td>
+          <td class="text-end">$${totalItem.toLocaleString("es-CO")}</td>
         `;
         tbodyItems.appendChild(fila);
       });
     }
+
+    document.getElementById("f-items-subtotal").textContent = `$${totalSubtotalItems.toLocaleString("es-CO")}`;
+    document.getElementById("f-items-iva").textContent = `$${totalIvaItems.toLocaleString("es-CO")}`;
+    document.getElementById("f-items-total").textContent = `$${(totalSubtotalItems + totalIvaItems).toLocaleString("es-CO")}`;
 
     document.getElementById("f-manoobra").textContent = `$${Number(servicio.labor_cost ?? 0).toLocaleString("es-CO")}`;
     document.getElementById("f-subtotal").textContent = `$${Number(factura.subtotal).toLocaleString("es-CO")}`;

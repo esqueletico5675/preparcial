@@ -81,6 +81,23 @@ body {
     display: block !important;
   }
 
+  /* El modal de Bootstrap trae márgenes/transform propios que empujan
+     la factura hacia abajo aunque esté "invisible". Los reseteamos para
+     que #factura-imprimible (position:absolute; top:0) quede pegado
+     de verdad a la esquina superior de la hoja. */
+  .modal-dialog,
+  .modal-content,
+  .modal-body {
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
   .no-print {
     display: none !important;
   }

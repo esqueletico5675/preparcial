@@ -85,8 +85,10 @@
         <div class="modal-body">
           <!-- Todo lo de adentro de #factura-imprimible es lo único que se imprime -->
           <div id="factura-imprimible">
-            <div class="factura-encabezado mb-4">
-              <img src="img/logo.png" alt="Logo de la empresa" class="factura-logo" onerror="this.style.display='none'">
+            <div class="factura-encabezado mb-4" style="display:flex; align-items:center; gap:12px;">
+              <img src="img/logo.png" alt="Logo de la empresa" class="factura-logo"
+                   style="height:280px;width:280px;object-fit:contain;flex-shrink:0;"
+                   onerror="this.style.display='none'">
               <div class="text-center flex-grow-1">
                 <h4 class="mb-0">Taller Mecánico</h4>
                 <div class="text-muted">Factura de servicio</div>
@@ -111,19 +113,30 @@
             </div>
 
             <div class="mb-3">
-              <strong>Servicio:</strong> <span id="f-servicio"></span>
+              <strong>Diagnóstico:</strong> <span id="f-servicio"></span>
             </div>
 
             <table class="table table-sm table-bordered">
               <thead class="table-light">
                 <tr>
-                  <th>Repuesto</th>
+                  <th>Referencia</th>
+                  <th>Descripción</th>
                   <th class="text-end">Cantidad</th>
-                  <th class="text-end">Precio unit.</th>
+                  <th class="text-end">Precio unitario</th>
                   <th class="text-end">Subtotal</th>
+                  <th class="text-end">IVA</th>
+                  <th class="text-end">Total</th>
                 </tr>
               </thead>
               <tbody id="f-items"></tbody>
+              <tfoot>
+                <tr class="table-light">
+                  <th colspan="4" class="text-end">Totales</th>
+                  <th class="text-end" id="f-items-subtotal"></th>
+                  <th class="text-end" id="f-items-iva"></th>
+                  <th class="text-end" id="f-items-total"></th>
+                </tr>
+              </tfoot>
             </table>
 
             <div class="row justify-content-end">
