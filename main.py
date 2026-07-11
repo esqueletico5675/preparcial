@@ -4,21 +4,21 @@ from db import SessionDep, create_all_tables
 
 from models.models import VehicleId, VehicleBase, Vehicleuptader
 from models.owner import Ownerid, Owner, uptadeownerchm
-from models.producto import ProductoId, ProductoBase, ProductoUpdate
-from models.servicio import ServicioId, ServicioBase, ServicioUpdate, \
+from models.Producto import ProductoId, ProductoBase, ProductoUpdate
+from models.Servicio import ServicioId, ServicioBase, ServicioUpdate, \
     ServicioProductoId, ServicioProductoBase
-from models.factura import FacturaId
+from models.Factura import FacturaId
 
 from operations.Operations import createvehicle, showallvehicle, \
     findonevehicle, uptadevehicle, killvehicle
 from operations.operationsowner import createowner, findowner, killOwner, \
     Uptadeowner, showallowners, inactive_owners, active_owners
-from operations.operationsproducto import create_producto, find_producto, \
+from operations.Operationsproducto import create_producto, find_producto, \
     show_all_productos, update_producto, deactivate_producto
-from operations.operationsservicio import create_servicio, find_servicio, \
+from operations.Operationsservicio import create_servicio, find_servicio, \
     show_all_servicios, update_servicio, add_producto_to_servicio, \
     get_servicio_items
-from operations.operationsfactura import generar_factura, find_factura, \
+from operations.Operationsfactura import generar_factura, find_factura, \
     show_all_facturas
 
 app = FastAPI(lifespan=create_all_tables)
@@ -39,16 +39,16 @@ async def mostrar(session: SessionDep):
     return showallvehicle(session)
 
 
-@app.get("/FindOneMoto", response_model=VehicleId)
-async def FindoneMoto(id: int, session: SessionDep):
+@app.get("/FindOneVehicle", response_model=VehicleId)
+async def FindoneVehicle(id: int, session: SessionDep):
     vehicle = findonevehicle(id, session)
     if not vehicle:
         raise HTTPException(status_code=404, detail="Motor not found")
     return vehicle
 
 
-@app.patch("/MOTORUPTADER/{id}", response_model=VehicleId)
-async def MOTORuPTADER(id: int, motor: Vehicleuptader, session: SessionDep):
+@app.patch("/VehicleUPTADER/{id}", response_model=VehicleId)
+async def VehicleuPTADER(id: int, motor: Vehicleuptader, session: SessionDep):
     uptade = uptadevehicle(id, motor, session)
     if not uptade:
         raise HTTPException(status_code=404, detail="Motor not found")

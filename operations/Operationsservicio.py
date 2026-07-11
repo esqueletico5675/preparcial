@@ -1,9 +1,9 @@
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from models.servicio import ServicioBase, ServicioId, ServicioUpdate, \
+from models.Servicio import ServicioBase, ServicioId, ServicioUpdate, \
     ServicioProductoBase, ServicioProductoId
-from models.producto import ProductoId
+from models.Producto import ProductoId
 
 
 def create_servicio(servicio: ServicioBase, session: Session):

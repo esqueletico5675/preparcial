@@ -1,7 +1,7 @@
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from models.producto import ProductoBase, ProductoId, ProductoUpdate
+from models.Producto import ProductoBase, ProductoId, ProductoUpdate
 
 
 def create_producto(producto: ProductoBase, session: Session):

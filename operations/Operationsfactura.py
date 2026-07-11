@@ -1,9 +1,9 @@
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from models.factura import FacturaId
-from models.servicio import ServicioEstado
-from operations.operationsservicio import find_servicio, get_servicio_items
+from models.Factura import FacturaId
+from models.Servicio import ServicioEstado
+from operations.Operationsservicio import find_servicio, get_servicio_items
 
 # IVA general en Colombia. Ajusta esto si el taller aplica una tarifa
 # distinta (p. ej. régimen simplificado) o si mas adelante lo quieres
