@@ -5,6 +5,7 @@ from typing import Annotated
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends
 from sqlmodel import Session, create_engine, SQLModel
+from sqlalchemy import text
 
 load_dotenv()
 neon_db = os.getenv("DATABASE_URL_NEON")
@@ -24,6 +25,19 @@ async def create_all_tables(app: FastAPI):
     print("Creando tablas...")
     SQLModel.metadata.create_all(engine)
     print("Tablas creadas!")
+
+    # Migración simple: si la tabla servicio_producto ya existía antes de
+    # agregar el campo aplica_iva, create_all no la modifica (solo crea
+    # tablas nuevas). Este ALTER TABLE es seguro para volver a ejecutar
+    # cada vez que arranca la app, porque IF NOT EXISTS evita el error si
+    # la columna ya está creada.
+    with engine.begin() as connection:
+        connection.execute(text(
+            "ALTER TABLE servicio_producto "
+            "ADD COLUMN IF NOT EXISTS aplica_iva BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+    print("Migración de aplica_iva verificada!")
+
     yield
 
 

@@ -48,10 +48,11 @@ def servicios_by_vehicle(vehicle_id: int, session: Session):
 def add_servicio_item(item: ServicioProductoBase, session: Session):
     """Agrega un item (mano de obra o repuesto) al servicio. Si es un
     repuesto tomado del catálogo (productoid presente), descuenta el stock.
-    Devuelve None si el servicio no existe, ya fue facturado, el producto
-    no existe, o no hay stock suficiente."""
+    Devuelve None si el servicio no existe, el producto no existe, o no
+    hay stock suficiente. Se puede agregar en cualquier momento, incluso
+    si el servicio ya fue facturado."""
     servicio = find_servicio(item.servicioid, session)
-    if servicio is None or servicio.status == "facturado":
+    if servicio is None:
         return None
 
     if item.productoid is not None:
@@ -68,21 +69,20 @@ def add_servicio_item(item: ServicioProductoBase, session: Session):
     session.add(new_item)
     session.commit()
     session.refresh(new_item)
+
+    _sincronizar_factura(item.servicioid, session)
     return new_item
 
 
 def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Session):
-    """Edita descripción/cantidad/precio de un item ya agregado. Si el item
-    viene de un producto del catálogo y cambia la cantidad, ajusta el stock
-    por la diferencia. Devuelve None si no existe, si el servicio ya fue
-    facturado, o si no hay stock suficiente para un aumento de cantidad."""
+    """Edita descripción/cantidad/precio/IVA de un item ya agregado. Si el
+    item viene de un producto del catálogo y cambia la cantidad, ajusta el
+    stock por la diferencia. Devuelve None si no existe o si no hay stock
+    suficiente para un aumento de cantidad. Se puede editar en cualquier
+    momento, incluso si el servicio ya fue facturado."""
     try:
         item = session.get_one(ServicioProductoId, item_id)
     except NoResultFound:
-        return None
-
-    servicio = find_servicio(item.servicioid, session)
-    if servicio is not None and servicio.status == "facturado":
         return None
 
     updates = data.model_dump(exclude_unset=True)
@@ -99,6 +99,8 @@ def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Se
     session.add(item)
     session.commit()
     session.refresh(item)
+
+    _sincronizar_factura(item.servicioid, session)
     return item
 
 
@@ -108,19 +110,25 @@ def get_servicio_items(servicio_id: int, session: Session):
     ).all()
 
 
+def _sincronizar_factura(servicio_id: int, session: Session):
+    """Si el servicio ya tiene una factura generada, la recalcula con los
+    items actuales. Import local para evitar import circular (Operationsfactura
+    ya importa de este archivo)."""
+    from operations.Operationsfactura import actualizar_totales_factura
+    actualizar_totales_factura(servicio_id, session)
+
+
 def remove_servicio_item(item_id: int, session: Session):
     """Quita un item del servicio. Si venía de un producto del catálogo, le
-    devuelve el stock al inventario. Devuelve None si el item no existe o si
-    el servicio ya fue facturado (no se puede modificar una factura ya
-    generada)."""
+    devuelve el stock al inventario. Devuelve None si el item no existe.
+    Se puede quitar en cualquier momento, incluso si el servicio ya fue
+    facturado."""
     try:
         item = session.get_one(ServicioProductoId, item_id)
     except NoResultFound:
         return None
 
-    servicio = find_servicio(item.servicioid, session)
-    if servicio is not None and servicio.status == "facturado":
-        return None
+    servicioid = item.servicioid
 
     if item.productoid is not None:
         producto = session.get_one(ProductoId, item.productoid)
@@ -129,4 +137,6 @@ def remove_servicio_item(item_id: int, session: Session):
 
     session.delete(item)
     session.commit()
+
+    _sincronizar_factura(servicioid, session)
     return item

@@ -57,6 +57,9 @@ class ServicioProductoBase(SQLModel):
     # Precio libre: se escribe/edita en el momento, no viene fijo de
     # ningún catálogo (los precios varían de un trabajo a otro).
     unit_price: float = Field(gt=0)
+    # Si el item aplica IVA (19%) o no. Se elige por item porque no todos
+    # los repuestos/mano de obra tienen el mismo tratamiento tributario.
+    aplica_iva: bool = Field(default=False)
 
 
 class ServicioProductoId(ServicioProductoBase, table=True):
@@ -69,3 +72,4 @@ class ServicioProductoUpdate(SQLModel):
     descripcion: str | None = Field(default=None, min_length=1, max_length=200)
     quantity: float | None = Field(default=None, gt=0)
     unit_price: float | None = Field(default=None, gt=0)
+    aplica_iva: bool | None = Field(default=None)

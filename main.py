@@ -184,7 +184,7 @@ async def add_servicio_item_endpoint(item: ServicioProductoBase, session: Sessio
     if not result:
         raise HTTPException(
             status_code=400,
-            detail="Servicio no encontrado, ya facturado, producto no encontrado o stock insuficiente",
+            detail="Servicio no encontrado, producto no encontrado o stock insuficiente",
         )
     return result
 
@@ -200,7 +200,7 @@ async def update_servicio_item_endpoint(item_id: int, item: ServicioProductoUpda
     if not updated:
         raise HTTPException(
             status_code=400,
-            detail="Item no encontrado, servicio ya facturado, o stock insuficiente",
+            detail="Item no encontrado o stock insuficiente",
         )
     return updated
 

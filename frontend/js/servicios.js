@@ -17,6 +17,8 @@ let modalServicio;
 let modalRepuestos;
 let servicioActualId = null; // guarda qué servicio está abierto en el modal de ítems
 
+const IVA_RATE = 0.19; // 19%, igual que en la factura
+
 let serviciosCache = [];
 let vehiculosMap = new Map();  // id -> { plate, name }
 let productosMap = new Map();  // id -> { name, price }
@@ -234,14 +236,26 @@ function pintarRepuestos(items) {
   tbody.innerHTML = "";
 
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-2">Sin ítems agregados aún</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-2">Sin ítems agregados aún</td></tr>`;
+    document.getElementById("total-subtotal").textContent = "$0";
+    document.getElementById("total-iva").textContent = "$0";
+    document.getElementById("total-total").textContent = "$0";
     return;
   }
+
+  let totalSubtotal = 0;
+  let totalIva = 0;
 
   items.forEach((item) => {
     const esManoDeObra = item.tipo === "mano_obra";
     const etiquetaTipo = esManoDeObra ? "Mano de obra" : "Repuesto";
     const subtotal = item.quantity * item.unit_price;
+    // Si el item tiene aplica_iva=true se suma 19%, si no, se suma 0.
+    const iva = item.aplica_iva ? subtotal * IVA_RATE : 0;
+    const total = subtotal + iva;
+
+    totalSubtotal += subtotal;
+    totalIva += iva;
 
     const fila = document.createElement("tr");
     fila.innerHTML = `
@@ -250,6 +264,8 @@ function pintarRepuestos(items) {
       <td class="text-end">${item.quantity}</td>
       <td class="text-end">$${Number(item.unit_price).toLocaleString("es-CO")}</td>
       <td class="text-end">$${subtotal.toLocaleString("es-CO")}</td>
+      <td class="text-end">${item.aplica_iva ? `$${iva.toLocaleString("es-CO")}` : "$0"}</td>
+      <td class="text-end">$${total.toLocaleString("es-CO")}</td>
       <td class="text-end">
         <button class="btn btn-sm btn-outline-primary" onclick='editarItem(${JSON.stringify(item)})' title="Editar">
           <i class="bi bi-pencil"></i>
@@ -261,6 +277,10 @@ function pintarRepuestos(items) {
     `;
     tbody.appendChild(fila);
   });
+
+  document.getElementById("total-subtotal").textContent = `$${totalSubtotal.toLocaleString("es-CO")}`;
+  document.getElementById("total-iva").textContent = `$${totalIva.toLocaleString("es-CO")}`;
+  document.getElementById("total-total").textContent = `$${(totalSubtotal + totalIva).toLocaleString("es-CO")}`;
 }
 
 // Llena el formulario con los datos del ítem para editarlo, en vez de crear uno nuevo
@@ -271,6 +291,7 @@ function editarItem(item) {
   document.getElementById("item-descripcion").value = item.descripcion;
   document.getElementById("repuesto-quantity").value = item.quantity;
   document.getElementById("repuesto-unit_price").value = item.unit_price;
+  document.getElementById("item-iva").value = item.aplica_iva ? "19" : "0";
 
   alCambiarTipo(); // ajusta si se muestra o no el select de producto
 
@@ -286,6 +307,7 @@ function cancelarEdicionItem() {
   document.getElementById("form-repuesto").reset();
   document.getElementById("item-id").value = "";
   document.getElementById("item-tipo").value = "repuesto";
+  document.getElementById("item-iva").value = "0";
   alCambiarTipo();
 
   document.getElementById("titulo-form-item").textContent = "Agregar ítem";
@@ -313,12 +335,15 @@ async function guardarItem(evento) {
   const productoSeleccionado = document.getElementById("repuesto-productoid").value;
 
   try {
+    const aplicaIva = document.getElementById("item-iva").value === "19";
+
     if (itemId) {
-      // Editando un ítem existente: solo se puede cambiar descripción, cantidad y precio
+      // Editando un ítem existente: descripción, cantidad, precio e IVA
       const datos = {
         descripcion: document.getElementById("item-descripcion").value,
         quantity: Number(document.getElementById("repuesto-quantity").value),
         unit_price: Number(document.getElementById("repuesto-unit_price").value),
+        aplica_iva: aplicaIva,
       };
       await apiPatch(`/uptadeServicioItem/${itemId}`, datos);
       mostrarAlerta("Ítem actualizado correctamente");
@@ -331,6 +356,7 @@ async function guardarItem(evento) {
         descripcion: document.getElementById("item-descripcion").value,
         quantity: Number(document.getElementById("repuesto-quantity").value),
         unit_price: Number(document.getElementById("repuesto-unit_price").value),
+        aplica_iva: aplicaIva,
       };
       await apiPost("/ADDservicioItem", datos);
       mostrarAlerta("Ítem agregado al servicio");
