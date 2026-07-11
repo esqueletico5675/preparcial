@@ -8,8 +8,8 @@ from models.models import VehicleId, VehicleBase, Vehicleuptader
 from models.owner import Ownerid, Owner, uptadeownerchm
 from models.Producto import ProductoId, ProductoBase, ProductoUpdate
 from models.Servicio import ServicioId, ServicioBase, ServicioUpdate, \
-    ServicioProductoId, ServicioProductoBase
-from models.Factura import FacturaId , FacturaUpdate
+    ServicioProductoId, ServicioProductoBase, ServicioProductoUpdate
+from models.Factura import FacturaId, FacturaUpdate
 
 from operations.Operations import createvehicle, showallvehicle, \
     findonevehicle, uptadevehicle, killvehicle
@@ -18,15 +18,13 @@ from operations.operationsowner import createowner, findowner, killOwner, \
 from operations.Operationsproducto import create_producto, find_producto, \
     show_all_productos, update_producto, deactivate_producto
 from operations.Operationsservicio import create_servicio, find_servicio, \
-    show_all_servicios, update_servicio, add_producto_to_servicio, \
-    get_servicio_items, remove_servicio_item
+    show_all_servicios, update_servicio, add_servicio_item, \
+    update_servicio_item, get_servicio_items, remove_servicio_item
 from operations.Operationsfactura import generar_factura, find_factura, \
     show_all_facturas, update_factura
 
 app = FastAPI(lifespan=create_all_tables)
 
-# Permite que el frontend (HTML/JS servido desde otro origen, ej. Live Server
-# o file://) pueda hacer peticiones a esta API sin que el navegador las bloquee.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -180,13 +178,13 @@ async def update_servicio_endpoint(id: int, servicio: ServicioUpdate, session: S
     return updated
 
 
-@app.post("/ADDproductoServicio", response_model=ServicioProductoId)
-async def add_producto_servicio_endpoint(item: ServicioProductoBase, session: SessionDep):
-    result = add_producto_to_servicio(item, session)
+@app.post("/ADDservicioItem", response_model=ServicioProductoId)
+async def add_servicio_item_endpoint(item: ServicioProductoBase, session: SessionDep):
+    result = add_servicio_item(item, session)
     if not result:
         raise HTTPException(
             status_code=400,
-            detail="Producto no encontrado o stock insuficiente",
+            detail="Servicio no encontrado, ya facturado, producto no encontrado o stock insuficiente",
         )
     return result
 
@@ -196,30 +194,24 @@ async def show_servicio_items_endpoint(servicio_id: int, session: SessionDep):
     return get_servicio_items(servicio_id, session)
 
 
-# ---------------------- FACTURAS ----------------------
-
-@app.post("/GENERARfactura", response_model=FacturaId)
-async def generar_factura_endpoint(servicio_id: int, session: SessionDep):
-    factura = generar_factura(servicio_id, session)
-    if not factura:
+@app.patch("/uptadeServicioItem/{item_id}", response_model=ServicioProductoId)
+async def update_servicio_item_endpoint(item_id: int, item: ServicioProductoUpdate, session: SessionDep):
+    updated = update_servicio_item(item_id, item, session)
+    if not updated:
         raise HTTPException(
             status_code=400,
-            detail="Servicio no encontrado o ya fue facturado",
+            detail="Item no encontrado, servicio ya facturado, o stock insuficiente",
         )
-    return factura
+    return updated
 
 
-@app.get("/showfacturas", response_model=list[FacturaId])
-async def show_facturas_endpoint(session: SessionDep):
-    return show_all_facturas(session)
+@app.delete("/removeServicioItem/{item_id}", response_model=ServicioProductoId)
+async def remove_servicio_item_endpoint(item_id: int, session: SessionDep):
+    removed = remove_servicio_item(item_id, session)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    return removed
 
-
-@app.get("/FindOneFactura", response_model=FacturaId)
-async def find_factura_endpoint(id: int, session: SessionDep):
-    factura = find_factura(id, session)
-    if not factura:
-        raise HTTPException(status_code=404, detail="Factura not found")
-    return factura
 
 # ---------------------- FACTURAS ----------------------
 
@@ -254,17 +246,6 @@ async def update_factura_endpoint(id: int, factura: FacturaUpdate, session: Sess
         raise HTTPException(status_code=404, detail="Factura not found")
     return updated
 
-@app.delete("/removeServicioItem/{item_id}", response_model=ServicioProductoId)
-async def remove_servicio_item_endpoint(item_id: int, session: SessionDep):
-    removed = remove_servicio_item(item_id, session)
-    if not removed:
-        raise HTTPException(status_code=404, detail="Repuesto no encontrado")
-    return removed
-
 
 # ---------------------- FRONTEND ----------------------
-# IMPORTANTE: este mount va SIEMPRE al final del archivo, después de todas
-# las rutas @app.get/post/patch/delete de arriba. Sirve la carpeta frontend/
-# en la raíz, así que abriendo http://127.0.0.1:8000 se ve index.html
-# y todo (API + frontend) corre en el mismo puerto (8000).
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

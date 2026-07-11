@@ -59,7 +59,6 @@
             <th>ID</th>
             <th>Vehículo</th>
             <th>Descripción</th>
-            <th>Mano de obra</th>
             <th>Estado</th>
             <th>Fecha</th>
             <th class="text-end">Acciones</th>
@@ -95,11 +94,7 @@
             <div class="mb-3">
               <label class="form-label">Descripción del trabajo</label>
               <textarea class="form-control" id="servicio-description" required minlength="3" maxlength="500"></textarea>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Mano de obra (costo)</label>
-              <input type="number" class="form-control" id="servicio-labor_cost" min="0" step="0.01" value="0" />
+              <div class="form-text">La mano de obra y los repuestos se agregan después, desde el botón <i class="bi bi-box-seam"></i> en la tabla.</div>
             </div>
 
             <div class="mb-3">
@@ -121,12 +116,12 @@
     </div>
   </div>
 
-  <!-- ===================== MODAL REPUESTOS USADOS ===================== -->
+  <!-- ===================== MODAL ÍTEMS DEL SERVICIO (mano de obra + repuestos) ===================== -->
   <div class="modal fade" id="modalRepuestos" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Repuestos usados — <span id="repuestos-servicio-info"></span></h5>
+          <h5 class="modal-title">Ítems del servicio — <span id="repuestos-servicio-info"></span></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
@@ -134,10 +129,11 @@
           <table class="table table-sm">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio unitario</th>
-                <th>Subtotal</th>
+                <th>Referencia</th>
+                <th>Descripción</th>
+                <th class="text-end">Cantidad</th>
+                <th class="text-end">Precio unitario</th>
+                <th class="text-end">Subtotal</th>
                 <th class="text-end">Acciones</th>
               </tr>
             </thead>
@@ -148,27 +144,50 @@
 
           <hr />
 
-          <h6>Agregar repuesto</h6>
+          <h6 id="titulo-form-item">Agregar ítem</h6>
           <form id="form-repuesto" class="row g-2 align-items-end">
-            <div class="col-md-4">
-              <label class="form-label">Producto</label>
-              <select class="form-select" id="repuesto-productoid" required onchange="autocompletarPrecio()">
-                <option value="">Selecciona un producto...</option>
+            <input type="hidden" id="item-id" />
+
+            <div class="col-md-3">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" id="item-tipo" onchange="alCambiarTipo()">
+                <option value="repuesto">Repuesto</option>
+                <option value="mano_obra">Mano de obra</option>
               </select>
             </div>
+
+            <div class="col-md-4" id="campo-producto">
+              <label class="form-label">Producto (opcional)</label>
+              <select class="form-select" id="repuesto-productoid" onchange="autocompletarDesdeProducto()">
+                <option value="">Escribir descripción libremente...</option>
+              </select>
+            </div>
+
+            <div class="col-md-5">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-control" id="item-descripcion" required maxlength="200" />
+            </div>
+
             <div class="col-md-3">
               <label class="form-label">Cantidad</label>
-              <input type="number" class="form-control" id="repuesto-quantity" required min="1" value="1" />
+              <input type="number" class="form-control" id="repuesto-quantity" required min="0.01" step="0.01" value="1" />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label">Precio unitario</label>
               <input type="number" class="form-control" id="repuesto-unit_price" required min="0.01" step="0.01" />
             </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-primary w-100" id="btn-guardar-item">Agregar</button>
+            </div>
             <div class="col-md-2">
-              <button type="submit" class="btn btn-primary w-100">Agregar</button>
+              <button type="button" class="btn btn-outline-secondary w-100" id="btn-cancelar-edicion" onclick="cancelarEdicionItem()" style="display:none;">
+                Cancelar
+              </button>
             </div>
           </form>
-          <div class="form-text">El precio se llena automático con el precio actual del producto; puedes ajustarlo si es necesario.</div>
+          <div class="form-text">
+            El precio y la cantidad son libres — puedes escribirlos o ajustarlos aunque hayas elegido un producto del catálogo.
+          </div>
         </div>
       </div>
     </div>

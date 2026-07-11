@@ -5,7 +5,7 @@ class VehicleBase(SQLModel):
     name: str | None = Field(default=None, min_length=3, max_length=64)
     marca: str | None = Field(default=None, min_length=3, max_length=64)
     model: int | None = Field(default=None)
-    plate :str | None = Field(default=None, min_length=3, max_length=7)
+    plate :str | None = Field(default=None)
     kilometers :int | None = Field(default=None, ge=0,le=99999999)
 
 
