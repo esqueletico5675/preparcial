@@ -36,6 +36,21 @@ body {
   min-width: 300px;
 }
 
+/* Encabezado de la factura: logo a la izquierda, título centrado */
+.factura-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Logo de la empresa: pequeño, en la esquina, nunca ocupa toda la fila */
+.factura-logo {
+  height: 55px;
+  width: 55px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 /* ============================================================
    IMPRESIÓN DE FACTURA
    Cuando el usuario imprime (o guarda como PDF) desde el modal de
