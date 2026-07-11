@@ -1,40 +1,40 @@
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
-from models.models import Motorbase, Motorid,Motoruptader
+from models.models import VehicleBase, VehicleId,Vehicleuptader
 
-def createmoto(moto: Motorbase, session: Session):
-    newmoto = Motorid.model_validate(moto)
-    session.add(newmoto)
+def createvehicle(vehicle: VehicleBase, session: Session):
+    newvehicle = VehicleId.model_validate(vehicle)
+    session.add(newvehicle)
     session.commit()
-    session.refresh(newmoto)
-    return newmoto
+    session.refresh(newvehicle)
+    return newvehicle
 
-def showallmotos(session: Session):
-    return session.exec(select(Motorid))
+def showallvehicle(session: Session):
+    return session.exec(select(VehicleId))
 
-def findonemoto(id : int, session: Session):
+def findonevehicle(id : int, session: Session):
     try:
-        return session.get_one(Motorid,id)
+        return session.get_one(VehicleId, id)
     except NoResultFound:
         return None
 
 
-def uptademoto (id:int ,newmotor: Motoruptader, session: Session):
-    motor = findonemoto(id, session)
-    if motor is None:
+def uptadevehicle (id:int, newvehicle: Vehicleuptader, session: Session):
+    vehicle = findonevehicle(id, session)
+    if vehicle is None:
         return None
-    motorupt = newmotor.model_dump(exclude_unset= True)
-    motor.sqlmodel_update(motorupt)
-    session.add(motor)
+    motorupt = newvehicle.model_dump(exclude_unset= True)
+    vehicle.sqlmodel_update(motorupt)
+    session.add(vehicle)
     session.commit()
-    session.refresh(motor)
-    return motor
+    session.refresh(vehicle)
+    return vehicle
 
-def killmotor (id: int, session: Session):
+def killvehicle (id: int, session: Session):
     try :
-        moto = session.get_one(Motorid,id)
-        session.delete(moto)
+        vehicle = session.get_one(VehicleId, id)
+        session.delete(vehicle)
         session.commit()
-        return moto
+        return vehicle
     except NoResultFound:
         return None

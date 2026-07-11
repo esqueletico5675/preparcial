@@ -1,46 +1,47 @@
 from fastapi import FastAPI, HTTPException
 from psycopg2.extras import register_uuid
 
-from operations.Operations import createmoto, showallmotos, Motoruptader, killmotor, findonemoto, uptademoto
+from operations.Operations import createvehicle, showallvehicle, Vehicleuptader, killmotor, findonevehicle, \
+    uptadevehicle, killvehicle
 from operations.operationsowner import createowner, findowner, killOwner, uptadeownerchm, Uptadeowner, showallowners, \
     inactive_owners,active_owners
-from models.models import Motorid, Motorbase
+from models.models import VehicleId, VehicleBase
 from models.owner import Ownerid, Owner
 from db import  SessionDep, create_all_tables
 app = FastAPI(lifespan=create_all_tables)
 
 
-@app.post("/CREATEMOTO",response_model=Motorid)
-async def CreateMoto(moto: Motorbase, session : SessionDep ):
-    owner = findowner(moto.ownerid, session)
+@app.post("/CREATEVEHICLE", response_model=VehicleId)
+async def CreateMoto(Vehicle: VehicleBase, session : SessionDep):
+    owner = findowner(Vehicle.ownerid, session)
     if owner:
-        return createmoto(moto, session)
+        return createvehicle(Vehicle, session)
     else:
         raise HTTPException(status_code=404, detail="Owner not found")
 
 
 
-@app.get("/showallmotos",response_model=list[Motorid])
+@app.get("/showallvehicle", response_model=list[VehicleId])
 async def mostrar(session: SessionDep):
-    return showallmotos(session)
+    return showallvehicle(session)
 
-@app.get("/FindOneMoto",response_model=Motorid)
+@app.get("/FindOneMoto", response_model=VehicleId)
 async def FindoneMoto(id: int,session: SessionDep):
-    motor = findonemoto(id, session)
-    if not (motor):
+    vehicle = findonevehicle(id, session)
+    if not (vehicle):
         raise HTTPException(status_code=404, detail="Motor not found")
-    return motor
+    return vehicle
 
-@app.patch("/MOTORUPTADER/{id}",response_model=Motorid)
-async def MOTORuPTADER(id:int,motor : Motoruptader,session: SessionDep):
-    uptade = uptademoto(id,motor,session)
+@app.patch("/MOTORUPTADER/{id}", response_model=VehicleId)
+async def MOTORuPTADER(id:int, motor : Vehicleuptader, session: SessionDep):
+    uptade = uptadevehicle(id,motor,session)
     if not (uptade):
         raise HTTPException(status_code=404, detail="Motor not found")
     return uptade
 
-@app.delete("/KILLMOTOR",response_model=Motorbase)
-async def delete_motor(id: int,session: SessionDep):
-    delete = killmotor(id,session)
+@app.delete("/KILLVEHICLE", response_model=VehicleBase)
+async def delete_vehicle(id: int,session: SessionDep):
+    delete = killvehicle(id,session)
     if not (delete):
         raise HTTPException(status_code=404, detail="Motor not found")
     return delete
@@ -57,7 +58,7 @@ async def uptadeowner_endopoint(id: int, owner:uptadeownerchm, session: SessionD
         raise HTTPException(status_code=404, detail="Owner not found")
     return uptade
 
-@app.delete("/KILLowner/{id}",response_model=Motorid)
+@app.delete("/KILLowner/{id}", response_model=VehicleId)
 async def kill_owner(id: int,session: SessionDep):
     delete = killOwner(id,session)
     if not (delete):

@@ -11,7 +11,7 @@ print("DB URL;", neon_db)
 engine = create_engine(neon_db)
 
 def create_all_tables(app: FastAPI):
-    from models.models import Motorbase, Motorid
+    from models.models import VehicleBase, VehicleId
     from models.owner import Owner, Ownerid
     print("Creando tablas...")
     SQLModel.metadata.create_all(engine)
