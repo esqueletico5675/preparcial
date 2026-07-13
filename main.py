@@ -179,12 +179,14 @@ async def update_servicio_endpoint(id: int, servicio: ServicioUpdate, session: S
 
 
 @app.post("/ADDservicioItem", response_model=ServicioProductoId)
-async def add_servicio_item_endpoint(item: ServicioProductoBase, session: SessionDep):
-    result = add_servicio_item(item, session)
+async def add_servicio_item_endpoint(item: ServicioProductoBase, session: SessionDep, forzar: bool = False):
+    result = add_servicio_item(item, session, forzar_sin_stock=forzar)
+    if result == "stock_insuficiente":
+        raise HTTPException(status_code=409, detail="stock_insuficiente")
     if not result:
         raise HTTPException(
             status_code=400,
-            detail="Servicio no encontrado, producto no encontrado o stock insuficiente",
+            detail="Servicio no encontrado o producto no encontrado",
         )
     return result
 
@@ -195,12 +197,14 @@ async def show_servicio_items_endpoint(servicio_id: int, session: SessionDep):
 
 
 @app.patch("/uptadeServicioItem/{item_id}", response_model=ServicioProductoId)
-async def update_servicio_item_endpoint(item_id: int, item: ServicioProductoUpdate, session: SessionDep):
-    updated = update_servicio_item(item_id, item, session)
+async def update_servicio_item_endpoint(item_id: int, item: ServicioProductoUpdate, session: SessionDep, forzar: bool = False):
+    updated = update_servicio_item(item_id, item, session, forzar_sin_stock=forzar)
+    if updated == "stock_insuficiente":
+        raise HTTPException(status_code=409, detail="stock_insuficiente")
     if not updated:
         raise HTTPException(
             status_code=400,
-            detail="Item no encontrado o stock insuficiente",
+            detail="Item no encontrado",
         )
     return updated
 

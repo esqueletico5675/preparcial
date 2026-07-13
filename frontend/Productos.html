@@ -57,6 +57,7 @@
         <thead class="table-light">
           <tr>
             <th>ID</th>
+            <th>Tipo</th>
             <th>Nombre</th>
             <th>Descripción</th>
             <th>Precio</th>
@@ -86,6 +87,14 @@
             <input type="hidden" id="producto-id" />
 
             <div class="mb-3">
+              <label class="form-label">Tipo</label>
+              <select class="form-select" id="producto-tipo" onchange="alCambiarTipoProducto()">
+                <option value="repuesto">Repuesto (con stock)</option>
+                <option value="mano_obra">Mano de obra (sin stock)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
               <label class="form-label">Nombre</label>
               <input type="text" class="form-control" id="producto-name" required minlength="2" maxlength="100" />
             </div>
@@ -96,13 +105,13 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Precio</label>
-              <input type="number" class="form-control" id="producto-price" required min="0.01" step="0.01" />
+              <label class="form-label">Precio <span class="text-muted">(opcional)</span></label>
+              <input type="number" class="form-control" id="producto-price" min="0" step="0.01" />
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">Stock</label>
-              <input type="number" class="form-control" id="producto-stock" required min="0" />
+            <div class="mb-3" id="campo-stock">
+              <label class="form-label">Stock <span class="text-muted">(opcional)</span></label>
+              <input type="number" class="form-control" id="producto-stock" min="0" step="0.01" />
             </div>
 
             <div class="mb-3">

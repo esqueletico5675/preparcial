@@ -3,25 +3,18 @@
 // Maneja: la tabla de servicios, el modal de crear/editar servicio,
 // y el modal de ítems del servicio (mano de obra Y repuestos juntos,
 // en una sola tabla, con precio y cantidad siempre editables).
-//
-// Para que el usuario NUNCA tenga que escribir un ID a mano:
-// - El campo "Vehículo" es un <select> mostrando "Placa - Nombre".
-// - El campo "Producto" (al agregar un ítem tipo repuesto) es un <select>
-//   opcional que autocompleta descripción y precio, pero ambos se pueden
-//   cambiar libremente después.
-// - La tabla muestra la PLACA del vehículo, no su ID.
-// - Hay un buscador que filtra por placa o descripción.
 // ============================================================
 
 let modalServicio;
 let modalRepuestos;
-let servicioActualId = null; // guarda qué servicio está abierto en el modal de ítems
+let servicioActualId = null;
 
-const IVA_RATE = 0.19; // 19%, igual que en la factura
+const IVA_RATE = 0.19;
 
 let serviciosCache = [];
-let vehiculosMap = new Map();  // id -> { plate, name }
-let productosMap = new Map();  // id -> { name, price }
+let vehiculosMap = new Map();
+let repuestosMap = new Map();
+let manoObraMap = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
   modalServicio = new bootstrap.Modal(document.getElementById("modalServicio"));
@@ -34,8 +27,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("form-servicio").addEventListener("submit", guardarServicio);
   document.getElementById("form-repuesto").addEventListener("submit", guardarItem);
 });
-
-// ---------------- DATOS DE APOYO (para mostrar nombres en vez de IDs) ----------------
 
 async function cargarVehiculosMap() {
   try {
@@ -57,46 +48,52 @@ async function cargarVehiculosMap() {
 async function cargarProductosMap() {
   try {
     const productos = await apiGet("/showproductos");
-    productosMap = new Map(productos.map((p) => [p.id, { name: p.name, price: p.price }]));
 
-    const select = document.getElementById("repuesto-productoid");
-    productos.forEach((p) => {
-      const opcion = document.createElement("option");
-      opcion.value = p.id;
-      opcion.textContent = `${p.name} (stock: ${p.stock})`;
-      select.appendChild(opcion);
-    });
+    repuestosMap = new Map(
+      productos.filter((p) => p.tipo !== "mano_obra").map((p) => [p.id, { name: p.name, price: p.price, stock: p.stock }])
+    );
+    manoObraMap = new Map(
+      productos.filter((p) => p.tipo === "mano_obra").map((p) => [p.id, { name: p.name, price: p.price }])
+    );
+
+    pintarOpcionesProducto();
   } catch (error) {
     mostrarError(error);
   }
 }
 
-// Al elegir un producto en el modal de ítems, autocompleta descripción y precio.
-// El usuario puede cambiar cualquiera de los dos después libremente.
+function pintarOpcionesProducto() {
+  const tipo = document.getElementById("item-tipo").value;
+  const select = document.getElementById("repuesto-productoid");
+  const label = document.getElementById("label-producto");
+  const catalogo = tipo === "mano_obra" ? manoObraMap : repuestosMap;
+
+  select.innerHTML = `<option value="">Escribir descripción libremente...</option>`;
+  catalogo.forEach((item, id) => {
+    const opcion = document.createElement("option");
+    opcion.value = id;
+    opcion.textContent = tipo === "mano_obra" ? item.name : `${item.name} (stock: ${item.stock})`;
+    select.appendChild(opcion);
+  });
+
+  label.textContent = tipo === "mano_obra" ? "Mano de obra del catálogo (opcional)" : "Repuesto del catálogo (opcional)";
+}
+
 function autocompletarDesdeProducto() {
+  const tipo = document.getElementById("item-tipo").value;
+  const catalogo = tipo === "mano_obra" ? manoObraMap : repuestosMap;
   const productoId = Number(document.getElementById("repuesto-productoid").value);
-  const producto = productosMap.get(productoId);
+  const producto = catalogo.get(productoId);
   if (producto) {
     document.getElementById("item-descripcion").value = producto.name;
     document.getElementById("repuesto-unit_price").value = producto.price;
   }
 }
 
-// Al cambiar entre "Repuesto" y "Mano de obra", muestra u oculta el select
-// de producto (la mano de obra nunca viene de un producto del catálogo).
 function alCambiarTipo() {
-  const tipo = document.getElementById("item-tipo").value;
-  const campoProducto = document.getElementById("campo-producto");
-
-  if (tipo === "mano_obra") {
-    campoProducto.style.display = "none";
-    document.getElementById("repuesto-productoid").value = "";
-  } else {
-    campoProducto.style.display = "";
-  }
+  document.getElementById("repuesto-productoid").value = "";
+  pintarOpcionesProducto();
 }
-
-// ---------------- TABLA PRINCIPAL DE SERVICIOS ----------------
 
 async function cargarServicios() {
   try {
@@ -107,7 +104,6 @@ async function cargarServicios() {
   }
 }
 
-// Filtra serviciosCache por placa del vehículo o descripción del servicio
 function aplicarBusqueda() {
   const texto = (document.getElementById("buscador")?.value || "").toLowerCase().trim();
 
@@ -168,7 +164,7 @@ function abrirNuevo() {
 function abrirEditar(servicio) {
   document.getElementById("servicio-id").value = servicio.id;
   document.getElementById("servicio-vehicleid").value = servicio.vehicleid;
-  document.getElementById("servicio-vehicleid").disabled = true; // el vehículo no se cambia al editar
+  document.getElementById("servicio-vehicleid").disabled = true;
   document.getElementById("servicio-description").value = servicio.description ?? "";
   document.getElementById("servicio-status").value = servicio.status ?? "pendiente";
   document.getElementById("tituloModal").textContent = "Editar servicio";
@@ -182,7 +178,6 @@ async function guardarServicio(evento) {
 
   try {
     if (id) {
-      // Al editar solo se envían: descripción y estado
       const datos = {
         description: document.getElementById("servicio-description").value,
         status: document.getElementById("servicio-status").value,
@@ -190,7 +185,6 @@ async function guardarServicio(evento) {
       await apiPatch(`/uptadeServicio/${id}`, datos);
       mostrarAlerta("Servicio actualizado correctamente");
     } else {
-      // Al crear sí se envía el vehículo
       const datos = {
         vehicleid: Number(document.getElementById("servicio-vehicleid").value),
         description: document.getElementById("servicio-description").value,
@@ -206,8 +200,6 @@ async function guardarServicio(evento) {
   }
 }
 
-// ---------------- MODAL DE ÍTEMS (mano de obra + repuestos) ----------------
-
 async function abrirRepuestos(servicioId) {
   servicioActualId = servicioId;
 
@@ -217,7 +209,7 @@ async function abrirRepuestos(servicioId) {
     ? `${vehiculo.plate} - ${vehiculo.name}`
     : `Servicio #${servicioId}`;
 
-  cancelarEdicionItem(); // deja el formulario limpio y en modo "Agregar"
+  cancelarEdicionItem();
   await cargarRepuestos();
   modalRepuestos.show();
 }
@@ -250,7 +242,6 @@ function pintarRepuestos(items) {
     const esManoDeObra = item.tipo === "mano_obra";
     const etiquetaTipo = esManoDeObra ? "Mano de obra" : "Repuesto";
     const subtotal = item.quantity * item.unit_price;
-    // Si el item tiene aplica_iva=true se suma 19%, si no, se suma 0.
     const iva = item.aplica_iva ? subtotal * IVA_RATE : 0;
     const total = subtotal + iva;
 
@@ -283,17 +274,15 @@ function pintarRepuestos(items) {
   document.getElementById("total-total").textContent = `$${(totalSubtotal + totalIva).toLocaleString("es-CO")}`;
 }
 
-// Llena el formulario con los datos del ítem para editarlo, en vez de crear uno nuevo
 function editarItem(item) {
   document.getElementById("item-id").value = item.id;
   document.getElementById("item-tipo").value = item.tipo;
+  pintarOpcionesProducto();
   document.getElementById("repuesto-productoid").value = item.productoid ?? "";
   document.getElementById("item-descripcion").value = item.descripcion;
   document.getElementById("repuesto-quantity").value = item.quantity;
   document.getElementById("repuesto-unit_price").value = item.unit_price;
   document.getElementById("item-iva").value = item.aplica_iva ? "19" : "0";
-
-  alCambiarTipo(); // ajusta si se muestra o no el select de producto
 
   document.getElementById("titulo-form-item").textContent = "Editar ítem";
   document.getElementById("btn-guardar-item").textContent = "Guardar cambios";
@@ -302,7 +291,6 @@ function editarItem(item) {
   document.getElementById("item-descripcion").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-// Vuelve el formulario a modo "Agregar ítem nuevo"
 function cancelarEdicionItem() {
   document.getElementById("form-repuesto").reset();
   document.getElementById("item-id").value = "";
@@ -333,38 +321,51 @@ async function guardarItem(evento) {
   const itemId = document.getElementById("item-id").value;
   const tipo = document.getElementById("item-tipo").value;
   const productoSeleccionado = document.getElementById("repuesto-productoid").value;
+  const aplicaIva = document.getElementById("item-iva").value === "19";
 
-  try {
-    const aplicaIva = document.getElementById("item-iva").value === "19";
-
+  async function intentarGuardar(forzar) {
     if (itemId) {
-      // Editando un ítem existente: descripción, cantidad, precio e IVA
       const datos = {
         descripcion: document.getElementById("item-descripcion").value,
         quantity: Number(document.getElementById("repuesto-quantity").value),
         unit_price: Number(document.getElementById("repuesto-unit_price").value),
         aplica_iva: aplicaIva,
       };
-      await apiPatch(`/uptadeServicioItem/${itemId}`, datos);
+      await apiPatch(`/uptadeServicioItem/${itemId}?forzar=${forzar}`, datos);
       mostrarAlerta("Ítem actualizado correctamente");
     } else {
-      // Agregando un ítem nuevo
       const datos = {
         servicioid: servicioActualId,
         tipo: tipo,
-        productoid: tipo === "repuesto" && productoSeleccionado ? Number(productoSeleccionado) : null,
+        productoid: productoSeleccionado ? Number(productoSeleccionado) : null,
         descripcion: document.getElementById("item-descripcion").value,
         quantity: Number(document.getElementById("repuesto-quantity").value),
         unit_price: Number(document.getElementById("repuesto-unit_price").value),
         aplica_iva: aplicaIva,
       };
-      await apiPost("/ADDservicioItem", datos);
+      await apiPost(`/ADDservicioItem?forzar=${forzar}`, datos);
       mostrarAlerta("Ítem agregado al servicio");
     }
+  }
 
+  try {
+    await intentarGuardar(false);
     cancelarEdicionItem();
     cargarRepuestos();
   } catch (error) {
+    if (error.message === "stock_insuficiente") {
+      const continuar = confirm("No hay stock suficiente de este producto. ¿Deseas continuar de todas formas?");
+      if (continuar) {
+        try {
+          await intentarGuardar(true);
+          cancelarEdicionItem();
+          cargarRepuestos();
+        } catch (errorForzado) {
+          mostrarError(errorForzado);
+        }
+      }
+      return;
+    }
     mostrarError(error);
   }
 }

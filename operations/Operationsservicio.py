@@ -45,12 +45,15 @@ def servicios_by_vehicle(vehicle_id: int, session: Session):
 
 # --- Manejo de items del servicio/cotización (mano de obra Y repuestos) ---
 
-def add_servicio_item(item: ServicioProductoBase, session: Session):
+def add_servicio_item(item: ServicioProductoBase, session: Session, forzar_sin_stock: bool = False):
     """Agrega un item (mano de obra o repuesto) al servicio. Si es un
     repuesto tomado del catálogo (productoid presente), descuenta el stock.
-    Devuelve None si el servicio no existe, el producto no existe, o no
-    hay stock suficiente. Se puede agregar en cualquier momento, incluso
-    si el servicio ya fue facturado."""
+    Devuelve None si el servicio no existe o el producto no existe.
+    Devuelve el texto "stock_insuficiente" si no hay stock y no se forzó
+    (para que el frontend pregunte '¿deseas continuar?'). Si forzar_sin_stock
+    es True, se agrega igual y el stock puede quedar en negativo (representa
+    un faltante/pedido pendiente). Se puede agregar en cualquier momento,
+    incluso si el servicio ya fue facturado."""
     servicio = find_servicio(item.servicioid, session)
     if servicio is None:
         return None
@@ -60,10 +63,11 @@ def add_servicio_item(item: ServicioProductoBase, session: Session):
             producto = session.get_one(ProductoId, item.productoid)
         except NoResultFound:
             return None
-        if producto.stock < item.quantity:
-            return None  # stock insuficiente
-        producto.stock -= item.quantity
-        session.add(producto)
+        if producto.tipo == "repuesto":
+            if producto.stock < item.quantity and not forzar_sin_stock:
+                return "stock_insuficiente"
+            producto.stock -= item.quantity
+            session.add(producto)
 
     new_item = ServicioProductoId.model_validate(item)
     session.add(new_item)
@@ -74,12 +78,13 @@ def add_servicio_item(item: ServicioProductoBase, session: Session):
     return new_item
 
 
-def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Session):
+def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Session, forzar_sin_stock: bool = False):
     """Edita descripción/cantidad/precio/IVA de un item ya agregado. Si el
     item viene de un producto del catálogo y cambia la cantidad, ajusta el
-    stock por la diferencia. Devuelve None si no existe o si no hay stock
-    suficiente para un aumento de cantidad. Se puede editar en cualquier
-    momento, incluso si el servicio ya fue facturado."""
+    stock por la diferencia. Devuelve None si el item no existe. Devuelve
+    "stock_insuficiente" si el aumento de cantidad supera el stock disponible
+    y no se forzó. Se puede editar en cualquier momento, incluso si el
+    servicio ya fue facturado."""
     try:
         item = session.get_one(ServicioProductoId, item_id)
     except NoResultFound:
@@ -88,12 +93,13 @@ def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Se
     updates = data.model_dump(exclude_unset=True)
 
     if "quantity" in updates and item.productoid is not None:
-        diferencia = updates["quantity"] - item.quantity  # > 0 = necesita más stock
         producto = session.get_one(ProductoId, item.productoid)
-        if diferencia > 0 and producto.stock < diferencia:
-            return None
-        producto.stock -= diferencia
-        session.add(producto)
+        if producto.tipo == "repuesto":
+            diferencia = updates["quantity"] - item.quantity  # > 0 = necesita más stock
+            if diferencia > 0 and producto.stock < diferencia and not forzar_sin_stock:
+                return "stock_insuficiente"
+            producto.stock -= diferencia
+            session.add(producto)
 
     item.sqlmodel_update(updates)
     session.add(item)
@@ -132,8 +138,9 @@ def remove_servicio_item(item_id: int, session: Session):
 
     if item.productoid is not None:
         producto = session.get_one(ProductoId, item.productoid)
-        producto.stock += item.quantity
-        session.add(producto)
+        if producto.tipo == "repuesto":
+            producto.stock += item.quantity
+            session.add(producto)
 
     session.delete(item)
     session.commit()
