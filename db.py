@@ -21,6 +21,7 @@ async def create_all_tables(app: FastAPI):
     from models.Producto import ProductoId
     from models.Servicio import ServicioId, ServicioProductoId
     from models.Factura import FacturaId
+    from models.Usuario import UsuarioId
 
     print("Creando tablas...")
     SQLModel.metadata.create_all(engine)

@@ -180,6 +180,7 @@ async function verFactura(facturaId) {
 
     let totalSubtotalItems = 0;
     let totalIvaItems = 0;
+    let totalManoObra = 0; // suma solo los items tipo "mano_obra" (sin IVA)
 
     if (!items || items.length === 0) {
       tbodyItems.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Sin ítems agregados aún</td></tr>`;
@@ -193,6 +194,9 @@ async function verFactura(facturaId) {
 
         totalSubtotalItems += subtotalItem;
         totalIvaItems += ivaItem;
+        if (esManoDeObra) {
+          totalManoObra += subtotalItem;
+        }
 
         const fila = document.createElement("tr");
         fila.innerHTML = `
@@ -212,7 +216,7 @@ async function verFactura(facturaId) {
     document.getElementById("f-items-iva").textContent = `$${totalIvaItems.toLocaleString("es-CO")}`;
     document.getElementById("f-items-total").textContent = `$${(totalSubtotalItems + totalIvaItems).toLocaleString("es-CO")}`;
 
-    document.getElementById("f-manoobra").textContent = `$${Number(servicio.labor_cost ?? 0).toLocaleString("es-CO")}`;
+    document.getElementById("f-manoobra").textContent = `$${totalManoObra.toLocaleString("es-CO")}`;
     document.getElementById("f-subtotal").textContent = `$${Number(factura.subtotal).toLocaleString("es-CO")}`;
     document.getElementById("f-iva").textContent = `$${Number(factura.iva).toLocaleString("es-CO")}`;
     document.getElementById("f-total").textContent = `$${Number(factura.total).toLocaleString("es-CO")}`;

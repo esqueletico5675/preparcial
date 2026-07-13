@@ -50,10 +50,16 @@ async function cargarProductosMap() {
     const productos = await apiGet("/showproductos");
 
     repuestosMap = new Map(
-      productos.filter((p) => p.tipo !== "mano_obra").map((p) => [p.id, { name: p.name, price: p.price, stock: p.stock }])
+      productos
+        .filter((p) => p.active !== false)   // <-- nuevo: excluye inactivos
+        .filter((p) => p.tipo !== "mano_obra")
+        .map((p) => [p.id, { name: p.name, price: p.price, stock: p.stock }])
     );
     manoObraMap = new Map(
-      productos.filter((p) => p.tipo === "mano_obra").map((p) => [p.id, { name: p.name, price: p.price }])
+      productos
+        .filter((p) => p.active !== false)   // <-- nuevo: excluye inactivos
+        .filter((p) => p.tipo === "mano_obra")
+        .map((p) => [p.id, { name: p.name, price: p.price }])
     );
 
     pintarOpcionesProducto();

@@ -1,39 +1,34 @@
-// ============================================================
-// API.JS
-// Funciones genéricas para hablar con el backend (FastAPI).
-// Todas las páginas usan estas mismas 4 funciones: apiGet, apiPost,
-// apiPatch y apiDelete. Así evitamos repetir código fetch() en cada página.
-// ============================================================
-
-/**
- * Hace una petición a la API y devuelve el JSON de la respuesta.
- * Si la respuesta no es exitosa (status >= 400), lanza un error con
- * el mensaje que envía el backend (detail).
- */
 async function apiRequest(path, method = "GET", body = null) {
   const options = {
     method,
     headers: { "Content-Type": "application/json" },
   };
+
+  const token = getToken();
+  if (token) {
+    options.headers["Authorization"] = `Bearer ${token}`;
+  }
+
   if (body !== null) {
     options.body = JSON.stringify(body);
   }
 
   const response = await fetch(`${API_URL}${path}`, options);
 
-  // Si el backend responde con error, intentamos leer el mensaje "detail"
+  if (response.status === 401) {
+    cerrarSesion(); // token inválido o expirado -> vuelve al login
+    throw new Error("Sesión expirada, inicia sesión de nuevo");
+  }
+
   if (!response.ok) {
     let mensaje = `Error ${response.status}`;
     try {
       const data = await response.json();
       if (data.detail) mensaje = data.detail;
-    } catch (e) {
-      // si no vino JSON, dejamos el mensaje genérico
-    }
+    } catch (e) {}
     throw new Error(mensaje);
   }
 
-  // DELETE a veces no devuelve contenido
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 }
@@ -48,10 +43,6 @@ const apiDelete = (path) => apiRequest(path, "DELETE");
 // UI helpers: mostrar mensajes de éxito / error con Bootstrap
 // ============================================================
 
-/**
- * Muestra una alerta de Bootstrap dentro del contenedor #alertas.
- * tipo puede ser: "success", "danger", "warning", "info"
- */
 function mostrarAlerta(mensaje, tipo = "success") {
   const contenedor = document.getElementById("alertas");
   if (!contenedor) return;
@@ -65,11 +56,9 @@ function mostrarAlerta(mensaje, tipo = "success") {
   `;
   contenedor.appendChild(alerta);
 
-  // se auto-elimina después de 4 segundos
   setTimeout(() => alerta.remove(), 4000);
 }
 
-// Atajo para errores: siempre muestra el mensaje real del backend
 function mostrarError(error) {
   console.error(error);
   mostrarAlerta(error.message || "Ocurrió un error inesperado", "danger");
