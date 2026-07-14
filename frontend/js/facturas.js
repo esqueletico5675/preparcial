@@ -131,12 +131,12 @@ function pintarTabla(facturas) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${f.id}</td>
-      <td>${placa}</td>
+      <td>${escapeHtml(placa)}</td>
       <td>$${Number(f.subtotal).toLocaleString("es-CO")}</td>
       <td>$${Number(f.iva).toLocaleString("es-CO")}</td>
       <td><strong>$${Number(f.total).toLocaleString("es-CO")}</strong></td>
-      <td>${f.fecha ?? ""}</td>
-      <td><span class="badge bg-info text-dark">${f.status}</span></td>
+      <td>${escapeHtml(f.fecha ?? "")}</td>
+      <td><span class="badge bg-info text-dark">${escapeHtml(f.status)}</span></td>
       <td class="text-end">
         <button class="btn btn-sm btn-outline-primary" onclick="verFactura(${f.id})">
           <i class="bi bi-eye"></i> Ver / Imprimir
@@ -191,17 +191,15 @@ async function verFactura(facturaId) {
         const subtotalItem = item.quantity * item.unit_price;
         const ivaItem = item.aplica_iva ? subtotalItem * IVA_RATE : 0;
         const totalItem = subtotalItem + ivaItem;
-
         totalSubtotalItems += subtotalItem;
         totalIvaItems += ivaItem;
         if (esManoDeObra) {
           totalManoObra += subtotalItem;
         }
-
         const fila = document.createElement("tr");
         fila.innerHTML = `
           <td>${etiquetaTipo}</td>
-          <td>${item.descripcion}</td>
+          <td>${escapeHtml(item.descripcion)}</td>
           <td class="text-end">${item.quantity}</td>
           <td class="text-end">$${Number(item.unit_price).toLocaleString("es-CO")}</td>
           <td class="text-end">$${subtotalItem.toLocaleString("es-CO")}</td>

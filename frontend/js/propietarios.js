@@ -65,17 +65,17 @@ function pintarTabla(propietarios) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${p.id}</td>
-      <td>${p.name ?? ""}</td>
-      <td>${p.email ?? ""}</td>
-      <td>${p.cellphone ?? ""}</td>
-      <td>${p.cc ?? ""}</td>
+      <td>${escapeHtml(p.name ?? "")}</td>
+      <td>${escapeHtml(p.email ?? "")}</td>
+      <td>${escapeHtml(p.cellphone ?? "")}</td>
+      <td>${escapeHtml(p.cc ?? "")}</td>
       <td>
         <span class="badge ${p.active ? "bg-success" : "bg-secondary"}">
           ${p.active ? "Activo" : "Inactivo"}
         </span>
       </td>
       <td class="text-end">
-        <button class="btn btn-sm btn-outline-primary" onclick='abrirEditar(${JSON.stringify(p)})'>
+        <button class="btn btn-sm btn-outline-primary" onclick="abrirEditar(${escapeHtml(JSON.stringify(p))})">
           <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-outline-danger" onclick="eliminarPropietario(${p.id})">

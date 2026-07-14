@@ -27,21 +27,22 @@ def _calcular_totales(servicio, items):
     return subtotal, iva, total
 
 
-def generar_factura(servicio_id: int, session: Session):
+def generar_factura(servicio_id: int, empresaid: int, session: Session):
     """Calcula subtotal (mano de obra + repuestos), IVA y total, y crea la
     factura. Marca el servicio como facturado. Devuelve None si el servicio
-    no existe o si ya fue facturado."""
-    servicio = find_servicio(servicio_id, session)
+    no existe (o no es de esta empresa) o si ya fue facturado."""
+    servicio = find_servicio(servicio_id, empresaid, session)
     if servicio is None:
         return None
     if servicio.status == ServicioEstado.FACTURADO:
         return None  # evita duplicar facturas para el mismo servicio
 
-    items = get_servicio_items(servicio_id, session)
+    items = get_servicio_items(servicio_id, empresaid, session)
     subtotal, iva, total = _calcular_totales(servicio, items)
 
     factura = FacturaId(
         servicioid=servicio_id,
+        empresaid=servicio.empresaid,
         subtotal=subtotal,
         iva=iva,
         total=total,
@@ -56,15 +57,20 @@ def generar_factura(servicio_id: int, session: Session):
     return factura
 
 
-def find_factura(id: int, session: Session):
+def find_factura(id: int, empresaid: int, session: Session):
     try:
-        return session.get_one(FacturaId, id)
+        factura = session.get_one(FacturaId, id)
+        if factura.empresaid != empresaid:
+            return None
+        return factura
     except NoResultFound:
         return None
 
 
 def find_factura_by_servicio(servicio_id: int, session: Session):
-    """Busca la factura asociada a un servicio (si existe)."""
+    """Busca la factura asociada a un servicio (si existe). No filtra por
+    empresa aparte porque solo se usa internamente, después de que
+    find_servicio ya validó la empresa del servicio dueño."""
     return session.exec(
         select(FacturaId).where(FacturaId.servicioid == servicio_id)
     ).first()
@@ -75,16 +81,17 @@ def actualizar_totales_factura(servicio_id: int, session: Session):
     IVA y total con los items actuales del servicio y actualiza la factura.
     No hace nada si el servicio todavía no ha sido facturado. Se llama
     automáticamente cada vez que se agrega, edita o quita un item del
-    servicio, para que la factura nunca quede desactualizada."""
+    servicio (la empresa ya fue validada por quien llamó a esa operación
+    de items, así que aquí solo usamos la empresa del servicio directamente)."""
     factura = find_factura_by_servicio(servicio_id, session)
     if factura is None:
         return None
 
-    servicio = find_servicio(servicio_id, session)
+    servicio = find_servicio(servicio_id, factura.empresaid, session)
     if servicio is None:
         return None
 
-    items = get_servicio_items(servicio_id, session)
+    items = get_servicio_items(servicio_id, factura.empresaid, session)
     subtotal, iva, total = _calcular_totales(servicio, items)
 
     factura.subtotal = subtotal
@@ -96,18 +103,20 @@ def actualizar_totales_factura(servicio_id: int, session: Session):
     return factura
 
 
-def show_all_facturas(session: Session):
-    return session.exec(select(FacturaId)).all()
-
-
-def facturas_by_status(status: str, session: Session):
+def show_all_facturas(empresaid: int, session: Session):
     return session.exec(
-        select(FacturaId).where(FacturaId.status == status)
+        select(FacturaId).where(FacturaId.empresaid == empresaid)
     ).all()
 
 
-def update_factura(id: int, data: FacturaUpdate, session: Session):
-    factura = find_factura(id, session)
+def facturas_by_status(status: str, empresaid: int, session: Session):
+    return session.exec(
+        select(FacturaId).where(FacturaId.status == status, FacturaId.empresaid == empresaid)
+    ).all()
+
+
+def update_factura(id: int, empresaid: int, data: FacturaUpdate, session: Session):
+    factura = find_factura(id, empresaid, session)
     if factura is None:
         return None
     updates = data.model_dump(exclude_unset=True)

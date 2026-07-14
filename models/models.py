@@ -14,6 +14,8 @@ class VehicleBase(SQLModel):
 
 class VehicleId(VehicleBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    empresaid: int = Field(foreign_key="empresa.id")
+    active: bool = Field(default=True)
 
 
 

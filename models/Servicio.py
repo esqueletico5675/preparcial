@@ -33,6 +33,7 @@ class ServicioId(ServicioBase, table=True):
     __tablename__ = "servicio"
 
     id: int | None = Field(default=None, primary_key=True)
+    empresaid: int = Field(foreign_key="empresa.id")
 
 
 class ServicioUpdate(SQLModel):

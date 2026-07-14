@@ -33,7 +33,7 @@ async function hacerLogin(evento) {
     }
 
     const data = await response.json();
-    guardarSesion(data.access_token, data.role);
+    guardarSesion(data.access_token, data.role, data.username);
     window.location.href = "index.html";
   } catch (error) {
     mostrarError(error);

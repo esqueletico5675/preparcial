@@ -1,9 +1,24 @@
+// ============================================================
+// API.JS
+// Funciones genéricas para hablar con el backend (FastAPI).
+// ============================================================
+
+function escapeHtml(valor) {
+  if (valor === null || valor === undefined) return "";
+  return String(valor)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 async function apiRequest(path, method = "GET", body = null) {
   const options = {
     method,
     headers: { "Content-Type": "application/json" },
+    cache: "no-store",
   };
-
   const token = getToken();
   if (token) {
     options.headers["Authorization"] = `Bearer ${token}`;
@@ -16,7 +31,7 @@ async function apiRequest(path, method = "GET", body = null) {
   const response = await fetch(`${API_URL}${path}`, options);
 
   if (response.status === 401) {
-    cerrarSesion(); // token inválido o expirado -> vuelve al login
+    cerrarSesion();
     throw new Error("Sesión expirada, inicia sesión de nuevo");
   }
 
@@ -24,7 +39,11 @@ async function apiRequest(path, method = "GET", body = null) {
     let mensaje = `Error ${response.status}`;
     try {
       const data = await response.json();
-      if (data.detail) mensaje = data.detail;
+      if (Array.isArray(data.detail)) {
+        mensaje = data.detail.map((e) => `${e.loc?.at(-1)}: ${e.msg}`).join(", ");
+      } else if (data.detail) {
+        mensaje = data.detail;
+      }
     } catch (e) {}
     throw new Error(mensaje);
   }
@@ -33,7 +52,6 @@ async function apiRequest(path, method = "GET", body = null) {
   return text ? JSON.parse(text) : null;
 }
 
-// Atajos para cada método HTTP
 const apiGet = (path) => apiRequest(path, "GET");
 const apiPost = (path, body) => apiRequest(path, "POST", body);
 const apiPatch = (path, body) => apiRequest(path, "PATCH", body);
@@ -51,7 +69,7 @@ function mostrarAlerta(mensaje, tipo = "success") {
   alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
   alerta.role = "alert";
   alerta.innerHTML = `
-    ${mensaje}
+    ${escapeHtml(mensaje)}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
   `;
   contenedor.appendChild(alerta);

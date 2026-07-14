@@ -17,6 +17,7 @@ class ProductoId(ProductoBase, table=True):
     __tablename__ = "producto"
 
     id: int | None = Field(default=None, primary_key=True)
+    empresaid: int = Field(foreign_key="empresa.id")
     active: bool = Field(default=True)
 
 

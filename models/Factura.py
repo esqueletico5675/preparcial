@@ -10,6 +10,7 @@ class FacturaEstado:
 
 class FacturaBase(SQLModel):
     servicioid: int = Field(foreign_key="servicio.id")
+    empresaid: int = Field(foreign_key="empresa.id")
     subtotal: float = Field(ge=0)
     iva: float = Field(ge=0)
     total: float = Field(ge=0)

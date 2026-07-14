@@ -9,35 +9,37 @@ from sqlalchemy import text
 
 load_dotenv()
 neon_db = os.getenv("DATABASE_URL_NEON")
-engine = create_engine(neon_db)
+engine = create_engine(
+    neon_db,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 
 
 @asynccontextmanager
 async def create_all_tables(app: FastAPI):
-    # Importar aqui (y no arriba del archivo) para evitar imports circulares,
-    # ya que estos modulos a su vez importan cosas de db.py
     from models.models import VehicleId
     from models.owner import Ownerid
     from models.Producto import ProductoId
     from models.Servicio import ServicioId, ServicioProductoId
     from models.Factura import FacturaId
     from models.Usuario import UsuarioId
+    from models.Empresa import EmpresaId
 
     print("Creando tablas...")
     SQLModel.metadata.create_all(engine)
     print("Tablas creadas!")
 
-    # Migración simple: si la tabla servicio_producto ya existía antes de
-    # agregar el campo aplica_iva, create_all no la modifica (solo crea
-    # tablas nuevas). Este ALTER TABLE es seguro para volver a ejecutar
-    # cada vez que arranca la app, porque IF NOT EXISTS evita el error si
-    # la columna ya está creada.
     with engine.begin() as connection:
         connection.execute(text(
             "ALTER TABLE servicio_producto "
             "ADD COLUMN IF NOT EXISTS aplica_iva BOOLEAN NOT NULL DEFAULT FALSE"
         ))
-    print("Migración de aplica_iva verificada!")
+        connection.execute(text(
+            "ALTER TABLE vehicleid "
+            "ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE"
+        ))
+    print("Migración de aplica_iva y active (vehiculos) verificada!")
 
     yield
 
@@ -48,5 +50,3 @@ def get_session() -> Session:
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
-
-

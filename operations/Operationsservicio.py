@@ -6,27 +6,32 @@ from models.Servicio import ServicioBase, ServicioId, ServicioUpdate, \
 from models.Producto import ProductoId
 
 
-def create_servicio(servicio: ServicioBase, session: Session):
-    new_servicio = ServicioId.model_validate(servicio)
+def create_servicio(servicio: ServicioBase, empresaid: int, session: Session):
+    new_servicio = ServicioId.model_validate(servicio, update={"empresaid": empresaid})
     session.add(new_servicio)
     session.commit()
     session.refresh(new_servicio)
     return new_servicio
 
 
-def find_servicio(id: int, session: Session):
+def find_servicio(id: int, empresaid: int, session: Session):
     try:
-        return session.get_one(ServicioId, id)
+        servicio = session.get_one(ServicioId, id)
+        if servicio.empresaid != empresaid:
+            return None
+        return servicio
     except NoResultFound:
         return None
 
 
-def show_all_servicios(session: Session):
-    return session.exec(select(ServicioId)).all()
+def show_all_servicios(empresaid: int, session: Session):
+    return session.exec(
+        select(ServicioId).where(ServicioId.empresaid == empresaid)
+    ).all()
 
 
-def update_servicio(id: int, data: ServicioUpdate, session: Session):
-    servicio = find_servicio(id, session)
+def update_servicio(id: int, empresaid: int, data: ServicioUpdate, session: Session):
+    servicio = find_servicio(id, empresaid, session)
     if servicio is None:
         return None
     updates = data.model_dump(exclude_unset=True)
@@ -37,24 +42,24 @@ def update_servicio(id: int, data: ServicioUpdate, session: Session):
     return servicio
 
 
-def servicios_by_vehicle(vehicle_id: int, session: Session):
+def servicios_by_vehicle(vehicle_id: int, empresaid: int, session: Session):
     return session.exec(
-        select(ServicioId).where(ServicioId.vehicleid == vehicle_id)
+        select(ServicioId).where(
+            ServicioId.vehicleid == vehicle_id,
+            ServicioId.empresaid == empresaid,
+        )
     ).all()
 
 
 # --- Manejo de items del servicio/cotización (mano de obra Y repuestos) ---
 
-def add_servicio_item(item: ServicioProductoBase, session: Session, forzar_sin_stock: bool = False):
+def add_servicio_item(item: ServicioProductoBase, empresaid: int, session: Session, forzar_sin_stock: bool = False):
     """Agrega un item (mano de obra o repuesto) al servicio. Si es un
     repuesto tomado del catálogo (productoid presente), descuenta el stock.
-    Devuelve None si el servicio no existe o el producto no existe.
-    Devuelve el texto "stock_insuficiente" si no hay stock y no se forzó
-    (para que el frontend pregunte '¿deseas continuar?'). Si forzar_sin_stock
-    es True, se agrega igual y el stock puede quedar en negativo (representa
-    un faltante/pedido pendiente). Se puede agregar en cualquier momento,
-    incluso si el servicio ya fue facturado."""
-    servicio = find_servicio(item.servicioid, session)
+    Devuelve None si el servicio no existe (o no pertenece a la empresa) o
+    el producto no existe. Devuelve el texto "stock_insuficiente" si no hay
+    stock y no se forzó."""
+    servicio = find_servicio(item.servicioid, empresaid, session)
     if servicio is None:
         return None
 
@@ -62,6 +67,8 @@ def add_servicio_item(item: ServicioProductoBase, session: Session, forzar_sin_s
         try:
             producto = session.get_one(ProductoId, item.productoid)
         except NoResultFound:
+            return None
+        if producto.empresaid != empresaid:
             return None
         if producto.tipo == "repuesto":
             if producto.stock < item.quantity and not forzar_sin_stock:
@@ -78,16 +85,22 @@ def add_servicio_item(item: ServicioProductoBase, session: Session, forzar_sin_s
     return new_item
 
 
-def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Session, forzar_sin_stock: bool = False):
-    """Edita descripción/cantidad/precio/IVA de un item ya agregado. Si el
-    item viene de un producto del catálogo y cambia la cantidad, ajusta el
-    stock por la diferencia. Devuelve None si el item no existe. Devuelve
-    "stock_insuficiente" si el aumento de cantidad supera el stock disponible
-    y no se forzó. Se puede editar en cualquier momento, incluso si el
-    servicio ya fue facturado."""
+def _get_item_verificado(item_id: int, empresaid: int, session: Session):
+    """Trae un item solo si el servicio al que pertenece es de esta empresa."""
     try:
         item = session.get_one(ServicioProductoId, item_id)
     except NoResultFound:
+        return None
+    servicio = find_servicio(item.servicioid, empresaid, session)
+    if servicio is None:
+        return None
+    return item
+
+
+def update_servicio_item(item_id: int, empresaid: int, data: ServicioProductoUpdate, session: Session, forzar_sin_stock: bool = False):
+    """Edita descripción/cantidad/precio/IVA de un item ya agregado."""
+    item = _get_item_verificado(item_id, empresaid, session)
+    if item is None:
         return None
 
     updates = data.model_dump(exclude_unset=True)
@@ -110,7 +123,10 @@ def update_servicio_item(item_id: int, data: ServicioProductoUpdate, session: Se
     return item
 
 
-def get_servicio_items(servicio_id: int, session: Session):
+def get_servicio_items(servicio_id: int, empresaid: int, session: Session):
+    servicio = find_servicio(servicio_id, empresaid, session)
+    if servicio is None:
+        return []
     return session.exec(
         select(ServicioProductoId).where(ServicioProductoId.servicioid == servicio_id)
     ).all()
@@ -124,14 +140,11 @@ def _sincronizar_factura(servicio_id: int, session: Session):
     actualizar_totales_factura(servicio_id, session)
 
 
-def remove_servicio_item(item_id: int, session: Session):
+def remove_servicio_item(item_id: int, empresaid: int, session: Session):
     """Quita un item del servicio. Si venía de un producto del catálogo, le
-    devuelve el stock al inventario. Devuelve None si el item no existe.
-    Se puede quitar en cualquier momento, incluso si el servicio ya fue
-    facturado."""
-    try:
-        item = session.get_one(ServicioProductoId, item_id)
-    except NoResultFound:
+    devuelve el stock al inventario."""
+    item = _get_item_verificado(item_id, empresaid, session)
+    if item is None:
         return None
 
     servicioid = item.servicioid

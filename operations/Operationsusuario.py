@@ -1,46 +1,29 @@
-from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from models.Usuario import UsuarioId, UsuarioCreate, UsuarioUpdate
+from models.Usuario import UsuarioId, UsuarioUpdate
 from security import hash_password
 
 
-def create_usuario(data: UsuarioCreate, session: Session):
-    nuevo = UsuarioId(
-        username=data.username,
-        role=data.role,
-        hashed_password=hash_password(data.password),
-    )
-    session.add(nuevo)
-    session.commit()
-    session.refresh(nuevo)
-    return nuevo
-
-
-def find_usuario(id: int, session: Session):
-    try:
-        return session.get_one(UsuarioId, id)
-    except NoResultFound:
+def find_usuario(id: int, empresaid: int, session: Session):
+    """Nunca devuelve un usuario de otra empresa, aunque el ID exista."""
+    usuario = session.get(UsuarioId, id)
+    if usuario is None or usuario.empresaid != empresaid:
         return None
+    return usuario
 
 
-def find_usuario_by_username(username: str, session: Session):
+def show_all_usuarios(empresaid: int, session: Session):
     return session.exec(
-        select(UsuarioId).where(UsuarioId.username == username)
-    ).first()
+        select(UsuarioId).where(UsuarioId.empresaid == empresaid)
+    ).all()
 
 
-def show_all_usuarios(session: Session):
-    return session.exec(select(UsuarioId)).all()
-
-
-def update_usuario(id: int, data: UsuarioUpdate, session: Session):
-    usuario = find_usuario(id, session)
+def update_usuario(id: int, empresaid: int, data: UsuarioUpdate, session: Session):
+    usuario = find_usuario(id, empresaid, session)
     if usuario is None:
         return None
 
     updates = data.model_dump(exclude_unset=True)
-
     if "password" in updates:
         password = updates.pop("password")
         usuario.hashed_password = hash_password(password)
@@ -52,8 +35,8 @@ def update_usuario(id: int, data: UsuarioUpdate, session: Session):
     return usuario
 
 
-def delete_usuario(id: int, session: Session):
-    usuario = find_usuario(id, session)
+def delete_usuario(id: int, empresaid: int, session: Session):
+    usuario = find_usuario(id, empresaid, session)
     if usuario is None:
         return None
     usuario.active = False

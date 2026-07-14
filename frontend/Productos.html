@@ -11,29 +11,37 @@
 <body>
 
   <!-- ===================== NAVBAR ===================== -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="index.html"><i class="bi bi-tools"></i> J.L.M DIESELCONTACT</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="nav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>
-          <li class="nav-item"><a class="nav-link" href="propietarios.html">Propietarios</a></li>
-          <li class="nav-item"><a class="nav-link" href="vehiculos.html">Vehículos</a></li>
-          <li class="nav-item"><a class="nav-link active" href="productos.html">Productos</a></li>
-          <li class="nav-item"><a class="nav-link" href="servicios.html">Servicios</a></li>
-          <li class="nav-item"><a class="nav-link" href="facturas.html">Facturas</a></li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" onclick="cerrarSesion()"><i class="bi bi-box-arrow-right"></i> Salir</a>
-          </li>
-        </ul>
-      </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="index.html"><i class="bi bi-tools"></i> J.L.M DIESELCONTACT</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="index.html">Inicio</a></li>
+        <li class="nav-item"><a class="nav-link" href="propietarios.html">Propietarios</a></li>
+        <li class="nav-item"><a class="nav-link" href="vehiculos.html">Vehículos</a></li>
+        <li class="nav-item"><a class="nav-link active" href="productos.html">Productos</a></li>
+        <li class="nav-item"><a class="nav-link" href="servicios.html">Servicios</a></li>
+        <li class="nav-item"><a class="nav-link" href="facturas.html">Facturas</a></li>
+        <li class="nav-item"><a class="nav-link" href="usuarios.html">Usuarios</a></li>
+        <li class="nav-item d-flex align-items-center mx-2">
+          <span class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                style="width: 36px; height: 36px; font-weight: bold; cursor: default;"
+                id="avatar-usuario"
+                title="">
+          </span>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="cerrarSesion()"><i class="bi bi-box-arrow-right"></i> Salir</a>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <div id="alertas"></div>
+<div id="alertas"></div>
 
   <!-- ===================== CONTENIDO ===================== -->
   <div class="container py-4">

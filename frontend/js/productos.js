@@ -56,18 +56,18 @@ function pintarTabla(productos) {
     fila.innerHTML = `
       <td>${p.id}</td>
       <td><span class="badge ${esManoDeObra ? "bg-secondary" : "bg-light text-dark border"}">${esManoDeObra ? "Mano de obra" : "Repuesto"}</span></td>
-      <td>${p.name ?? ""}</td>
-      <td>${p.description ?? ""}</td>
+      <td>${escapeHtml(p.name ?? "")}</td>
+      <td>${escapeHtml(p.description ?? "")}</td>
       <td>${p.price != null ? "$" + Number(p.price).toLocaleString("es-CO") : "—"}</td>
       <td>${esManoDeObra ? "—" : p.stock}</td>
-      <td>${p.sku ?? ""}</td>
+      <td>${escapeHtml(p.sku ?? "")}</td>
       <td>
         <span class="badge ${p.active ? "bg-success" : "bg-secondary"}">
           ${p.active ? "Activo" : "Inactivo"}
         </span>
       </td>
       <td class="text-end">
-        <button class="btn btn-sm btn-outline-primary" onclick='abrirEditar(${JSON.stringify(p)})'>
+        <button class="btn btn-sm btn-outline-primary" onclick="abrirEditar(${escapeHtml(JSON.stringify(p))})">
           <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-outline-danger" onclick="eliminarProducto(${p.id})">

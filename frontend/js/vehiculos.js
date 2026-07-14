@@ -88,14 +88,14 @@ function pintarTabla(vehiculos) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${v.id}</td>
-      <td>${nombrePropietario}</td>
-      <td>${v.name ?? ""}</td>
-      <td>${v.marca ?? ""}</td>
-      <td>${v.model ?? ""}</td>
-      <td><span class="badge bg-light text-dark border">${v.plate ?? ""}</span></td>
-      <td>${v.kilometers ?? ""}</td>
+      <td>${escapeHtml(nombrePropietario)}</td>
+      <td>${escapeHtml(v.name ?? "")}</td>
+      <td>${escapeHtml(v.marca ?? "")}</td>
+      <td>${escapeHtml(v.model ?? "")}</td>
+      <td><span class="badge bg-light text-dark border">${escapeHtml(v.plate ?? "")}</span></td>
+      <td>${escapeHtml(v.kilometers ?? "")}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-outline-primary" onclick='abrirEditar(${JSON.stringify(v)})'>
+        <button class="btn btn-sm btn-outline-primary" onclick="abrirEditar(${escapeHtml(JSON.stringify(v))})">
           <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-outline-danger" onclick="eliminarVehiculo(${v.id})">

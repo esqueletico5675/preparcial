@@ -143,15 +143,15 @@ function pintarTabla(servicios) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td>${s.id}</td>
-      <td>${textoVehiculo}</td>
-      <td>${s.description ?? ""}</td>
-      <td><span class="badge bg-info text-dark">${s.status}</span></td>
-      <td>${s.fecha ?? ""}</td>
+      <td>${escapeHtml(textoVehiculo)}</td>
+      <td>${escapeHtml(s.description ?? "")}</td>
+      <td><span class="badge bg-info text-dark">${escapeHtml(s.status)}</span></td>
+      <td>${escapeHtml(s.fecha ?? "")}</td>
       <td class="text-end">
         <button class="btn btn-sm btn-outline-secondary" onclick="abrirRepuestos(${s.id})" title="Ítems del servicio">
           <i class="bi bi-box-seam"></i>
         </button>
-        <button class="btn btn-sm btn-outline-primary" onclick='abrirEditar(${JSON.stringify(s)})'>
+        <button class="btn btn-sm btn-outline-primary" onclick="abrirEditar(${escapeHtml(JSON.stringify(s))})">
           <i class="bi bi-pencil"></i>
         </button>
       </td>
@@ -257,14 +257,14 @@ function pintarRepuestos(items) {
     const fila = document.createElement("tr");
     fila.innerHTML = `
       <td><span class="badge ${esManoDeObra ? "bg-secondary" : "bg-light text-dark border"}">${etiquetaTipo}</span></td>
-      <td>${item.descripcion}</td>
+      <td>${escapeHtml(item.descripcion)}</td>
       <td class="text-end">${item.quantity}</td>
       <td class="text-end">$${Number(item.unit_price).toLocaleString("es-CO")}</td>
       <td class="text-end">$${subtotal.toLocaleString("es-CO")}</td>
       <td class="text-end">${item.aplica_iva ? `$${iva.toLocaleString("es-CO")}` : "$0"}</td>
       <td class="text-end">$${total.toLocaleString("es-CO")}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-outline-primary" onclick='editarItem(${JSON.stringify(item)})' title="Editar">
+        <button class="btn btn-sm btn-outline-primary" onclick="editarItem(${escapeHtml(JSON.stringify(item))})" title="Editar">
           <i class="bi bi-pencil"></i>
         </button>
         <button class="btn btn-sm btn-outline-danger" onclick="eliminarRepuesto(${item.id})" title="Quitar">

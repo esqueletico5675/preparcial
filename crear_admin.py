@@ -4,15 +4,21 @@ from sqlmodel import Session, select
 
 from db import engine
 from models.Usuario import UsuarioId, UsuarioRol
+from models.Empresa import EmpresaId
 from security import hash_password
 
 
 def main():
     username = input("Username del admin: ").strip()
     password = getpass.getpass("Contraseña: ")
+    empresaid = input("ID de la empresa: ").strip()
 
     if len(password) < 6:
         print("La contraseña debe tener al menos 6 caracteres.")
+        return
+
+    if not empresaid.isdigit():
+        print("Debes indicar un ID de empresa numérico válido.")
         return
 
     with Session(engine) as session:
@@ -27,10 +33,11 @@ def main():
             username=username,
             role=UsuarioRol.ADMIN,
             hashed_password=hash_password(password),
+            empresaid=int(empresaid),
         )
         session.add(admin)
         session.commit()
-        print(f"Admin '{username}' creado correctamente.")
+        print(f"Admin '{username}' creado correctamente en la empresa {empresaid}.")
 
 
 if __name__ == "__main__":
