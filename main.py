@@ -51,7 +51,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ---------------- CORS ----------------
 
-_origenes_env = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:8000,http://localhost:8000")
+_origenes_env = os.getenv("ALLOWED_ORIGINS", "https://contacts-8vnq.onrender.com")
 URL_RENDER = [origen.strip() for origen in _origenes_env.split(",") if origen.strip()]
 
 app.add_middleware(
